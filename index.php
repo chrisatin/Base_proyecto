@@ -20,6 +20,7 @@ $orden_categorias = ['Hamburguesas', 'Papas', 'Sodas', 'Malteadas', 'Cocteles', 
 <body>
     <header>
         <h1>Bocados' Express</h1>
+        <!-- Se eliminó botón para dejar visualmente solamente el menú de cada sucursal -->
         <!-- <a href="login.php" class="login-btn">Iniciar sesión</a> -->
     </header>
 

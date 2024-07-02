@@ -2,6 +2,9 @@
 session_start();
 require_once '../includes/db_connection.php';
 
+
+$orden_categorias = ['Hamburguesas', 'Papas', 'Sodas', 'Malteadas', 'Cocteles', 'Cervezas', 'Bebidas'];
+
 // Verificar si el usuario está logueado y es un Autor
 if (!isset($_SESSION['user_id']) || $_SESSION['user_level'] != 'Autor') {
     header("Location: login.php");
@@ -21,7 +24,7 @@ $empleado_info = $result->fetch_assoc();
 
 // Obtener menú de la sucursal
 $id_sucursal = $empleado_info['id_sucursal'];
-$query = "SELECT * FROM menus WHERE id_sucursal = $id_sucursal ORDER BY categoria_plato, nombre_plato";
+$query = "SELECT * FROM menus WHERE id_sucursal = $id_sucursal ORDER BY FIELD(categoria_plato, '" . implode("','", $orden_categorias) . "'), nombre_plato";
 $menu_result = $mysqli->query($query);
 
 // Procesar el formulario cuando se envía
@@ -35,8 +38,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $sql_cliente = "INSERT INTO clientes (nombre_cliente, apellido_cliente, telefono_cliente) VALUES ('$nombre_cliente', '$apellido_cliente', '$telefono_cliente')";
     if ($mysqli->query($sql_cliente) === TRUE) {
         $id_cliente = $mysqli->insert_id;
-
+        
         // Crear nuevo pedido
+        date_default_timezone_set('America/Bogota');
         $fecha_pedido = date("Y-m-d");
         $hora_pedido = date("H:i:s");
         $lista_platos = "";
@@ -72,59 +76,99 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 ?>
 
-<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Realizar Pedido</title>
-    <link rel="stylesheet" href="../css/main_style.css">
+    <link rel="stylesheet" href="../css/autor_style.css">
+    <style>
+        .user-data {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .user-data div {
+            display: flex;
+            flex-direction: column;
+        }
+        .user-data label {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .user-data input {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
-<header>
+    <header>
         <h1>Bocados' Express</h1>
     </header>
 
     <main>
-        <h1>Realizar Nuevo Pedido</h1>
-        <p>Usted está generando un nuevo usuario y pedido en la sucursal <?php echo $empleado_info['ciudad_sucursal']; ?> (<?php echo $empleado_info['direccion_sucursal']; ?>) por el cajero <?php echo $empleado_info['nombre_empleado'] . ' ' . $empleado_info['apellido_empleado']; ?>.</p>
+        <div class="autor-info">
+            <h2>Realizar Nuevo Pedido</h2>
+            <p>Usted está generando un nuevo usuario y pedido en la sucursal <?php echo $empleado_info['ciudad_sucursal']; ?> (<?php echo $empleado_info['direccion_sucursal']; ?>) en caja recibe <?php echo $empleado_info['nombre_empleado'] . ' ' . $empleado_info['apellido_empleado']; ?>.</p>
+        </div>
 
-        <form id="orderForm" method="POST">
-            <h2>Datos del Cliente:</h2>
-            <label for="nombre_cliente">Nombre:</label>
-            <input type="text" id="nombre_cliente" name="nombre_cliente" required>
+        <form id="orderForm" method="POST" class="pedidos">
+            <h3>Datos del Cliente:</h3>
+            <div class="user-data">
+                <div>
+                    <label for="nombre_cliente">Nombre:</label>
+                    <input type="text" id="nombre_cliente" name="nombre_cliente" required>
+                </div>
+                <div>
+                    <label for="apellido_cliente">Apellido:</label>
+                    <input type="text" id="apellido_cliente" name="apellido_cliente" required>
+                </div>
+                <div>
+                    <label for="telefono_cliente">Teléfono:</label>
+                    <input type="tel" id="telefono_cliente" name="telefono_cliente" required>
+                </div>
+            </div>
 
-            <label for="apellido_cliente">Apellido:</label>
-            <input type="text" id="apellido_cliente" name="apellido_cliente" required>
-
-            <label for="telefono_cliente">Teléfono:</label>
-            <input type="tel" id="telefono_cliente" name="telefono_cliente" required>
-
-            <h2>Añadir Pedido:</h2>
+            <h3>Añadir Pedido:</h3>
             <?php
             $current_category = '';
             while ($row = $menu_result->fetch_assoc()) {
                 if ($current_category != $row['categoria_plato']) {
-                    if ($current_category != '') echo '</div>';
+                    if ($current_category != '') echo '</table>';
                     $current_category = $row['categoria_plato'];
-                    echo "<h3>$current_category</h3><div class='category'>";
+                    echo "<h3>$current_category</h3><table>";
+                    echo "<tr><th>Plato</th><th>Precio</th><th>Cantidad</th></tr>";
                 }
                 ?>
-                <div class="menu-item">
-                    <label>
-                        <input type="checkbox" name="platos[]" value="<?php echo $row['id_plato']; ?>" data-price="<?php echo $row['precio_plato']; ?>">
-                        <?php echo $row['nombre_plato']; ?> - $<?php echo $row['precio_plato']; ?>
-                    </label>
-                    <input type="number" name="cantidad[<?php echo $row['id_plato']; ?>]" min="1" value="1" disabled>
-                </div>
+                <tr>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="platos[]" value="<?php echo $row['id_plato']; ?>" data-price="<?php echo $row['precio_plato']; ?>">
+                            <?php echo $row['nombre_plato']; ?>
+                        </label>
+                    </td>
+                    <td>$<?php echo $row['precio_plato']; ?></td>
+                    <td>
+                        <input type="number" name="cantidad[<?php echo $row['id_plato']; ?>]" min="1" value="1" disabled>
+                    </td>
+                </tr>
                 <?php
             }
-            if ($current_category != '') echo '</div>';
+            if ($current_category != '') echo '</table>';
             ?>
 
             <h3>Total del Pedido: $<span id="totalAmount">0</span></h3>
 
-            <button type="submit">Realizar Pedido</button>
+
+            <div class="actions">
+                <button type="submit" class="btn">Realizar Pedido</button>
+                <a href="autor.php" class="btn">Volver a la Página Anterior</a>
+            </div>
+        </form>
+    </main>
         </form>
     </main>
 
@@ -140,18 +184,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             checkboxes.forEach(checkbox => {
                 if (checkbox.checked) {
                     const price = parseFloat(checkbox.dataset.price);
-                    const quantity = parseInt(checkbox.parentNode.nextElementSibling.value);
+                    const quantity = parseInt(checkbox.closest('tr').querySelector('input[type="number"]').value);
                     total += price * quantity;
                 }
             });
-            document.getElementById('totalAmount').textContent = total.toFixed(2);
+            document.getElementById('totalAmount').textContent = total.toFixed(0);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             const form = document.getElementById('orderForm');
             form.addEventListener('change', (event) => {
                 if (event.target.type === 'checkbox') {
-                    event.target.parentNode.nextElementSibling.disabled = !event.target.checked;
+                    event.target.closest('tr').querySelector('input[type="number"]').disabled = !event.target.checked;
                 }
                 calculateTotal();
             });

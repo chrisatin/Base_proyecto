@@ -29,17 +29,17 @@ $menu_result = $mysqli->query($query);
 
 // Procesar el formulario cuando se envía
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Validar y sanitizar los datos del cliente
+    // Validar los datos del cliente
     $nombre_cliente = $mysqli->real_escape_string($_POST['nombre_cliente']);
     $apellido_cliente = $mysqli->real_escape_string($_POST['apellido_cliente']);
     $telefono_cliente = $mysqli->real_escape_string($_POST['telefono_cliente']);
 
-    // Insertar nuevo cliente
+    // Consulta para insertar en el cliente
     $sql_cliente = "INSERT INTO clientes (nombre_cliente, apellido_cliente, telefono_cliente) VALUES ('$nombre_cliente', '$apellido_cliente', '$telefono_cliente')";
     if ($mysqli->query($sql_cliente) === TRUE) {
         $id_cliente = $mysqli->insert_id;
         
-        // Crear nuevo pedido
+        // Aca obtengo la zona horaria formateo la hora para guardarla en la base de datos
         date_default_timezone_set('America/Bogota');
         $fecha_pedido = date("Y-m-d");
         $hora_pedido = date("H:i:s");
@@ -182,6 +182,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             let total = 0;
             const checkboxes = document.querySelectorAll('input[type="checkbox"]');
             checkboxes.forEach(checkbox => {
+                // Acá uso querySelectorAll para obtener todos los elementos input de tipo checkbox.
                 if (checkbox.checked) {
                     const price = parseFloat(checkbox.dataset.price);
                     const quantity = parseInt(checkbox.closest('tr').querySelector('input[type="number"]').value);

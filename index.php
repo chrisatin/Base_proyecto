@@ -30,7 +30,7 @@ $orden_categorias = ['Hamburguesas', 'Papas', 'Sodas', 'Malteadas', 'Cocteles', 
         if ($result_sucursales->num_rows > 0) {
             while($sucursal = $result_sucursales->fetch_assoc()) {
                 echo "<section class='sucursal'>";
-                echo "<h2>{$sucursal['ciudad_sucursal']} - {$sucursal['direccion_sucursal']}</h2>";
+                echo "<h2>Menú de la sucursal {$sucursal['ciudad_sucursal']} - {$sucursal['direccion_sucursal']}</h2>";
 
                 // Obtener el menú para esta sucursal
                 $sql_menu = "SELECT * FROM menus WHERE id_sucursal = {$sucursal['id_sucursal']} ORDER BY FIELD(categoria_plato, '" . implode("','", $orden_categorias) . "'), nombre_plato";

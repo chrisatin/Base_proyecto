@@ -1,5 +1,21 @@
 <?php
-require_once 'includes/db_connection.php';
+session_start();
+require_once '../includes/db_connection.php';
+
+if (!isset($_SESSION['user_id']) || $_SESSION['user_level'] != 'Autor') {
+    header("Location: login.php");
+    exit();
+}
+
+$user_id = $_SESSION['user_id'];
+
+$query = "SELECT e.nombre_empleado, e.apellido_empleado, s.id_sucursal, s.ciudad_sucursal, s.direccion_sucursal 
+          FROM empleados e 
+          JOIN sucursales s ON e.id_sucursal = s.id_sucursal 
+          JOIN usuarios u ON e.id_empleado = u.id_empleado
+          WHERE u.id_usuario = $user_id";
+$result = $mysqli->query($query);
+$empleado_info = $result->fetch_assoc();
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $nombre = $mysqli->real_escape_string($_POST['nombre']);
@@ -72,7 +88,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reserva de Mesa</title>
-    <link rel="stylesheet" href="css/main_style.css">
+    <link rel="stylesheet" href="../css/main_style.css">
     <link rel="stylesheet" href="css/reserva_style.css">
 </head>
 <body>
